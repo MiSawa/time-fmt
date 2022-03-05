@@ -1,7 +1,11 @@
+[![CI](https://github.com/MiSawa/time-fmt/actions/workflows/ci.yml/badge.svg)](https://github.com/MiSawa/time-fmt/actions/workflows/ci.yml) [![crates.io](https://img.shields.io/crates/v/time-fmt.svg)](https://crates.io/crates/time-fmt)
+
 # time-fmt
+
 This is a library that formats/parses datetime of the [time crate](https://github.com/time-rs/time) with somewhat more `strftime`/`strptime`-compatible format specification.
 
 ## Features
+
 - ANSI/ISO C `strftime`-like function.
   - `%C`, `%d`, `%D`, `%e`, `%F`, `%g`, `%G`, `%h`, `%H`, `%I`, `%j`, `%k`, `%l`, `%m`, `%M`, `%n`, `%R`, `%S`, `%t`, `%T`, `%u`, `%U`, `%V`, `%w`, `%W`, `%y`, `%Y`, `%%`.
   - Those treated as if you were in C/POSIX locale: `%a`, `%A`, `%b`, `%B`, `%c`, `%p`, `%P`, `%r`, `%x`, `%X`.
@@ -14,11 +18,13 @@ This is a library that formats/parses datetime of the [time crate](https://githu
 - A function that converts `strftime`-like conversion specification to `Vec<FormatItem>` of the time crate.
 
 ## *Non*-features ...yet. Contributions are welcomed!
+
 - Compile format specifications to an intermediate representation is unsupported. Convert it to `Vec<FormatItem>` instead.
 - `%E*` and `%O*` should be implemented as if it were in the POSIX locale; i.e. fall back to the normal ones.
 - Minimum field width (should be applicable to `C`, `F`, `G`, `Y`) and flags (`0`, `+`).
 
 ## Incompatibilities / Cautions
+
 - `strftime`-like ones
   - Those require `nl_langinfo` lookups, namely `%a`, `%A`, `%b`, `%h`, `%B`, `%c`, `%p`, `%P`, `%r`, `%x`, and `%X` are not implemented to do so. Instead, they are hardcoded to use that of C/POSIX locale.
   - Era-based formats, namely those starts with `%E` are unsupported.
