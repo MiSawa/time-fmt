@@ -41,6 +41,16 @@ This is a library that formats/parses datetime of the [time crate](https://githu
 - Convertion to `Vec<FormatItem>`
   - `%C` (century) and `%Z` (timezone name) are unsupported as no corresponding `FormatItem` exists.
 
+## Pubilsh new version
+
+Note for myself.
+
+```shell
+$ git swithc master                 # make sure you're on the master branch
+$ cargo release patch               # to dry-run the release
+$ cargo release patch --execute     # to actually execute the release
+```
+
 ## License
 
 Licensed under either of
