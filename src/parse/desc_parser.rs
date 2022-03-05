@@ -30,7 +30,7 @@ pub(crate) trait Collector {
     }
     /// `%C`. `0` to `99`.
     fn year_prefix(&mut self) -> Result<(), Self::Error>;
-    /// `%d`. `01` to `31`.
+    /// `%d`, `%e`. `01` to `31`.
     fn day_of_month(&mut self) -> Result<(), Self::Error>;
     /// `%D`. `%m / %d / %y` (American......).
     #[inline]
@@ -54,9 +54,9 @@ pub(crate) trait Collector {
         self.static_str("-")?;
         self.day_of_month()
     }
-    /// `%H`. `00` to `23`.
+    /// `%H`, `%k`. `00` to `23`.
     fn hour_of_day(&mut self) -> Result<(), Self::Error>;
-    /// `%I`. `01` to `12`.
+    /// `%I`, `%l`. `01` to `12`.
     fn hour_of_day_12(&mut self) -> Result<(), Self::Error>;
     /// `%j`. `001` to `336`.
     fn day_of_year(&mut self) -> Result<(), Self::Error>;
@@ -69,7 +69,7 @@ pub(crate) trait Collector {
     fn new_line(&mut self) -> Result<(), Self::Error> {
         self.spaces()
     }
-    /// `%p`. `AM` or `PM`. `nl_langinfo`-dependent.
+    /// `%p`, `%P`. `AM` or `PM`. `nl_langinfo`-dependent.
     fn ampm(&mut self) -> Result<(), Self::Error>;
     /// `%r`. Same as `%I : %M : %S %p` in POSIX locale. `nl_langinfo`-dependent.
     #[inline]

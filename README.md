@@ -7,11 +7,13 @@ This is a library that formats/parses datetime of the [time crate](https://githu
   - Those treated as if you were in C/POSIX locale: `%a`, `%A`, `%b`, `%B`, `%c`, `%p`, `%P`, `%r`, `%x`, `%X`.
   - Available-ish in some functions (see: incompatibilities section): `%z`, `%Z`.
 - POSIX C `strptime`-like function.
-  - what...
+  - `%C`, `%d`, `%D`, `%e`, `%F`, `%h`, `%H`, `%I`, `%j`, `%k`, `%l`, `%m`, `%M`, `%n`, `%R`, `%S`, `%t`, `%T`, `%W`, `%y`, `%Y`, `%%`.
+  - Those treated as if you were in C/POSIX locale: `%b`, `%B`, `%c`, `%p`, `%P`, `%r`, `%x`, `%X`
+  - Available-ish but the way handling the parsed value is delegated to the user: `%z`, `%Z`.
+  - Those parsed (as if you were in C/POSIX locale) but ignored: `%a`, `%A`, `%U`, `%w`.
 - A function that converts `strftime`-like conversion specification to `Vec<FormatItem>` of the time crate.
 
 ## *Non*-features ...yet. Contributions are welcomed!
-- `strptime`-like function.
 - Compile format specifications to an intermediate representation is unsupported. Convert it to `Vec<FormatItem>` instead.
 - `%E*` and `%O*` should be implemented as if it were in the POSIX locale; i.e. fall back to the normal ones.
 - Minimum field width (should be applicable to `C`, `F`, `G`, `Y`) and flags (`0`, `+`).
@@ -26,7 +28,7 @@ This is a library that formats/parses datetime of the [time crate](https://githu
   - `%` followed by a character that doesn't compose a conversion specifier that *we* support will result into an error.
 - `strptime`-like ones
   - Years has to fit in 4 bytes, i.e. before the year -999 or after the year 9999 are unsupported.
-  - Day of week specifiers, week of year specifiers are matched to the input but ignored.
+  - Day of week specifiers, week of year specifiers, namely `%a`, `%A`, `%U`, and `%w` are matched to the input but ignored.
   - Since our structure that represents date/time are not something like `struct tm` of C language, inconsistent input will result in an unspecified behavior.
     - For example, one can specify the month, the day of the month, and the day of the year. But it's unclear what to do if the day of the year doesn't match what (month, day of the month) pair says. Currently it choose what day of the year says, it may be changed to do something else, for example returning `Result::Err` in a future release *without bumping the major version*.
 - Convertion to `Vec<FormatItem>`
