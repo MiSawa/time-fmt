@@ -3,4 +3,16 @@ name = "time-fmt"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = ["timezone_name"]
+timezone_name = [ "time-tz" ]
+
 [dependencies]
+cfg-if = "1.0.0"
+delegate = "0.6.2"
+thiserror = "1.0.30"
+time = { version = "0.3.7", features = ["parsing", "formatting"] }
+time-tz = { version = "0.3.1", features = ["system"], optional = true }
+
+[dev-dependencies]
+time = { version = "0.3.7", features = ["large-dates", "macros"] }
