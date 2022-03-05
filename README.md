@@ -19,7 +19,7 @@ This is a library that formats/parses datetime of the [time crate](https://githu
 
 ## *Non*-features ...yet. Contributions are welcomed!
 
-- Obviously require more test.
+- Not well-tested. Obviously require a lot more tests.
 - Compiling format specifications to an intermediate representation is unsupported. Convert them to `Vec<FormatItem>` instead.
 - `%E*` and `%O*` should be implemented as if it were in the C/POSIX locale; i.e. fall back to the normal ones.
 - Minimum field width (should be applicable to `C`, `F`, `G`, `Y`) and flags (`0`, `+`).
