@@ -33,7 +33,7 @@ impl<'a, W: Write> FormatCollector<'a, W> {
             date: date_time.date(),
             time: date_time.time(),
             offset: None,
-            #[cfg(feature= "timezone_name")]
+            #[cfg(feature = "timezone_name")]
             zone: None,
             write,
         }
@@ -43,7 +43,7 @@ impl<'a, W: Write> FormatCollector<'a, W> {
             date: date_time.date(),
             time: date_time.time(),
             offset: Some(date_time.offset()),
-            #[cfg(feature= "timezone_name")]
+            #[cfg(feature = "timezone_name")]
             zone: None,
             write,
         }
@@ -119,11 +119,8 @@ impl<'a, W: Write> Collector for FormatCollector<'a, W> {
     #[inline]
     fn iso8601_week_based_year_suffix(&mut self) -> Result<(), Self::Error> {
         let (year, _, _) = self.date.to_iso_week_date();
-        if year >= 0 {
-            self.write.write_fmt(format_args!("{:02}", year / 100))?;
-        } else {
-            self.write.write_fmt(format_args!("-{}", (-year) / 100))?;
-        }
+        self.write
+            .write_fmt(format_args!("{:02}", year.rem_euclid(100)))?;
         Ok(())
     }
 
@@ -325,7 +322,7 @@ pub fn format_offset_date_time(fmt: &str, date_time: OffsetDateTime) -> Result<S
     Ok(ret)
 }
 
-#[cfg(feature= "timezone_name")]
+#[cfg(feature = "timezone_name")]
 pub fn format_zoned_date_time(
     fmt: &str,
     date_time: PrimitiveDateTime,
@@ -339,8 +336,76 @@ pub fn format_zoned_date_time(
 
 #[cfg(test)]
 mod tests {
-    use super::format_offset_date_time;
-    use time::macros::datetime;
+    use super::{format_offset_date_time, format_primitive_date_time, format_zoned_date_time};
+    use time::{
+        macros::{datetime, offset},
+        PrimitiveDateTime,
+    };
+
+    #[test]
+    fn test_simple() -> Result<(), super::Error> {
+        fn test_datetime(
+            fmt: &str,
+            dt: PrimitiveDateTime,
+            expected: &str,
+        ) -> Result<(), super::Error> {
+            assert_eq!(format_primitive_date_time(fmt, dt)?, expected);
+            assert_eq!(
+                format_offset_date_time(fmt, dt.assume_offset(offset!(+9:00)))?,
+                expected
+            );
+            #[cfg(feature = "timezone_name")]
+            assert_eq!(
+                format_zoned_date_time(fmt, dt, time_tz::timezones::db::asia::TOKYO)?,
+                expected
+            );
+            Ok(())
+        }
+
+        let datetime = datetime!(2022-03-06 12:34:56);
+        let datetime2 = datetime!(2022-03-06 02:04:06);
+        test_datetime("%a %A", datetime, "Sun Sunday")?;
+        test_datetime("%b %h %B", datetime, "Mar Mar March")?;
+        test_datetime("%c", datetime, "Sun Mar  6 12:34:56 2022")?;
+        test_datetime("%C", datetime, "20")?;
+        test_datetime("%d", datetime, "06")?;
+        test_datetime("%D", datetime, "03/06/22")?;
+        test_datetime("%e", datetime, " 6")?;
+        test_datetime("%F", datetime, "2022-03-06")?;
+        test_datetime("%g", datetime, "22")?;
+        test_datetime("%G", datetime, "2022")?;
+        test_datetime("%H", datetime, "12")?;
+        test_datetime("%H", datetime2, "02")?;
+        test_datetime("%I", datetime, "12")?;
+        test_datetime("%I", datetime2, "02")?;
+        test_datetime("%j", datetime, "065")?;
+        test_datetime("%k", datetime2, " 2")?;
+        test_datetime("%l", datetime, "12")?;
+        test_datetime("%l", datetime2, " 2")?;
+        test_datetime("%m", datetime, "03")?;
+        test_datetime("%M", datetime, "34")?;
+        test_datetime("%n", datetime, "\n")?;
+        test_datetime("%p", datetime, "PM")?;
+        test_datetime("%P", datetime, "pm")?;
+        test_datetime("%r", datetime, "12:34:56 PM")?;
+        test_datetime("%r", datetime2, "02:04:06 AM")?;
+        test_datetime("%R", datetime, "12:34")?;
+        test_datetime("%R", datetime2, "02:04")?;
+        test_datetime("%S", datetime, "56")?;
+        test_datetime("%t", datetime, "\t")?;
+        test_datetime("%T", datetime, "12:34:56")?;
+        test_datetime("%u", datetime, "7")?;
+        test_datetime("%U", datetime, "10")?;
+        test_datetime("%V", datetime, "09")?;
+        test_datetime("%w", datetime, "0")?;
+        test_datetime("%W", datetime, "09")?;
+        test_datetime("%x", datetime, "03/06/22")?;
+        test_datetime("%X", datetime, "12:34:56")?;
+        test_datetime("%y", datetime, "22")?;
+        test_datetime("%Y", datetime, "2022")?;
+        test_datetime("%%", datetime, "%")?;
+        Ok(())
+    }
 
     #[test]
     fn test_year_prefix() -> Result<(), super::Error> {

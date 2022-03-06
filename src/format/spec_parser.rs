@@ -24,9 +24,8 @@ pub(crate) trait Collector {
         self.static_str(" ")?;
         self.day_of_month_blank()?;
         self.static_str(" ")?;
-        self.year()?;
-        self.static_str(" ")?;
         self.time_of_day()?;
+        self.static_str(" ")?;
         self.year()
     }
     /// `%C`. `00` to unbounded number.

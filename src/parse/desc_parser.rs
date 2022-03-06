@@ -22,8 +22,6 @@ pub(crate) trait Collector {
         self.spaces()?;
         self.day_of_month()?;
         self.spaces()?;
-        self.year()?;
-        self.spaces()?;
         self.time_of_day()?;
         self.spaces()?;
         self.year()
