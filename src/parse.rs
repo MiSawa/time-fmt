@@ -5,9 +5,9 @@ use crate::{parse::desc_parser::Collector, util};
 
 mod desc_parser;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq, Eq)]
 #[non_exhaustive]
-pub enum Error {
+pub enum ParseError {
     #[error("Unknown specifier `%{0}`")]
     UnknownSpecifier(char),
     #[error("Expected {0} but got a byte {1}")]
@@ -126,9 +126,9 @@ impl<'a> ParseCollector<'a> {
 
     /// Note: Need a change if pass max_len that makes us require checking for overflow.
     #[inline]
-    fn parse_nat<N: Nat>(&mut self, max_len: usize) -> Result<N, Error> {
+    fn parse_nat<N: Nat>(&mut self, max_len: usize) -> Result<N, ParseError> {
         if self.s.is_empty() {
-            return Err(Error::UnexpectedEnd("digits"));
+            return Err(ParseError::UnexpectedEnd("digits"));
         }
         let bytes = self.s.as_bytes();
         let max_len = max_len.min(bytes.len());
@@ -138,7 +138,7 @@ impl<'a> ParseCollector<'a> {
             if (b'0'..=b'9').contains(&c) {
                 res = (res * N::TEN) + N::from_u8(c - b'0');
             } else if bytes_read == 0 {
-                return Err(Error::UnexpectedByte("digits", c));
+                return Err(ParseError::UnexpectedByte("digits", c));
             } else {
                 break;
             }
@@ -151,9 +151,9 @@ impl<'a> ParseCollector<'a> {
     /// Allows '+'/'-'.
     /// Note: Need a change if pass max_len that makes us require checking for overflow.
     #[inline]
-    fn parse_int<Z: Int>(&mut self, max_len: usize) -> Result<Z, Error> {
+    fn parse_int<Z: Int>(&mut self, max_len: usize) -> Result<Z, ParseError> {
         if self.s.is_empty() {
-            return Err(Error::UnexpectedEnd("digits"));
+            return Err(ParseError::UnexpectedEnd("digits"));
         }
         let max_len = max_len.min(self.s.len());
         let mut res = Z::ZERO;
@@ -170,12 +170,12 @@ impl<'a> ParseCollector<'a> {
                 } else if c == b'-' {
                     negate = true;
                 } else {
-                    return Err(Error::UnexpectedByte("digits or sign", c));
+                    return Err(ParseError::UnexpectedByte("digits or sign", c));
                 }
             } else if had_digit {
                 break;
             } else {
-                return Err(Error::UnexpectedByte("digits", c));
+                return Err(ParseError::UnexpectedByte("digits", c));
             }
             bytes_read += 1;
         }
@@ -191,7 +191,7 @@ impl<'a> ParseCollector<'a> {
 
 impl<'a> Collector for ParseCollector<'a> {
     type Output = (PrimitiveDateTime, Option<TimeZoneSpecifier<'a>>);
-    type Error = Error;
+    type Error = ParseError;
 
     #[inline]
     fn spaces(&mut self) -> Result<(), Self::Error> {
@@ -525,7 +525,7 @@ impl<'a> Collector for ParseCollector<'a> {
 pub fn parse_date_time_maybe_with_zone<'a>(
     fmt: &str,
     s: &'a str,
-) -> Result<(PrimitiveDateTime, Option<TimeZoneSpecifier<'a>>), Error> {
+) -> Result<(PrimitiveDateTime, Option<TimeZoneSpecifier<'a>>), ParseError> {
     let collector = ParseCollector::new(s);
     desc_parser::parse_format_specifications(fmt, collector)
 }
@@ -536,7 +536,7 @@ mod tests {
     use time::macros::{datetime, offset};
 
     #[test]
-    fn test_simple_parse() -> Result<(), super::Error> {
+    fn test_simple_parse() -> Result<(), super::ParseError> {
         assert_eq!(
             parse_date_time_maybe_with_zone("%a %A %a", "wED Wed weDnesDay")?,
             (datetime!(1900-01-01 00:00:00), None)
@@ -673,7 +673,7 @@ mod tests {
     }
 
     #[test]
-    fn test_zone() -> Result<(), super::Error> {
+    fn test_zone() -> Result<(), super::ParseError> {
         assert_eq!(
             parse_date_time_maybe_with_zone("%FT%TZ", "2022-03-06T12:34:56Z")?,
             (datetime!(2022-03-06 12:34:56), None)
