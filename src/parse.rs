@@ -415,7 +415,7 @@ impl<'a> Collector for ParseCollector<'a> {
             }
             match &mut self.year {
                 ParsingYear::Unspecified => {
-                    self.year = ParsingYear::PrefixSuffix(if y < 69 { 19 } else { 20 }, y)
+                    self.year = ParsingYear::PrefixSuffix(if y < 69 { 20 } else { 19 }, y)
                 }
                 // Prefer year over (year prefix, year suffix).
                 ParsingYear::Year(_) => {}
@@ -533,22 +533,55 @@ mod tests {
     use time::macros::{datetime, offset};
 
     #[test]
-    fn test_zone() -> Result<(), super::Error> {
+    fn test_simple_parse() -> Result<(), super::Error> {
         assert_eq!(
-            parse_date_time_maybe_with_zone("%FT%TZ", "2015-03-05T23:51:47Z")?,
-            (datetime!(2015-03-05 23:51:47), None)
+            parse_date_time_maybe_with_zone("%a %A %a", "wED Wed weDnesDay")?,
+            (datetime!(1900-01-01 00:00:00), None)
         );
         assert_eq!(
-            parse_date_time_maybe_with_zone("%FT%T %z", "2015-03-05T23:51:47 -1234")?,
+            parse_date_time_maybe_with_zone("%b %B %b", "feB FEb feburaRy")?,
+            (datetime!(1900-02-01 00:00:00), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%c", "Sun Mar  6 12:34:56 2022")?,
+            (datetime!(2022-03-06 12:34:56), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%C", "20")?,
+            (datetime!(2000-01-01 00:00:00), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%d", "5")?,
+            (datetime!(1900-01-05 00:00:00), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%e", "5")?,
+            (datetime!(1900-01-05 00:00:00), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%D", "3 /6/22")?,
+            (datetime!(2022-03-06 00:00:00), None)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_zone() -> Result<(), super::Error> {
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%FT%TZ", "2022-03-06T12:34:56Z")?,
+            (datetime!(2022-03-06 12:34:56), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%FT%T %z", "2022-03-06T12:34:56 -1234")?,
             (
-                datetime!(2015-03-05 23:51:47),
+                datetime!(2022-03-06 12:34:56),
                 Some(TimeZoneSpecifier::Offset(offset!(-12:34)))
             )
         );
         assert_eq!(
-            parse_date_time_maybe_with_zone("%FT%T %Z", "2015-03-05T23:51:47 JST")?,
+            parse_date_time_maybe_with_zone("%FT%T %Z", "2022-03-06T12:34:56 JST")?,
             (
-                datetime!(2015-03-05 23:51:47),
+                datetime!(2022-03-06 12:34:56),
                 Some(TimeZoneSpecifier::Name("JST"))
             )
         );
