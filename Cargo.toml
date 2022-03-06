@@ -7,7 +7,7 @@ description = "A strftime/strptime-like time formatter/parser for time-rs"
 license = "MIT/Apache-2.0"
 repository = "https://github.com/MiSawa/time-fmt"
 readme = "README.md"
-exclude = [".github"]
+exclude = [".github", "release.toml"]
 
 [features]
 default = ["timezone_name"]
