@@ -42,6 +42,46 @@ This is a library that formats/parses datetime of the [time crate](https://githu
 - Convertion to `Vec<FormatItem>`
   - `%C` (century) and `%Z` (timezone name) are unsupported as no corresponding `FormatItem` exists.
 
+
+## Examples
+
+```rust
+use time::{macros::datetime, UtcOffset};
+use time_fmt::{format::*, parse::*};
+use time_tz::{timezones, PrimitiveDateTimeExt};
+
+let tokyo = timezones::db::asia::TOKYO;
+let dt = datetime!(2022-03-06 12:34:56);
+
+// Format primitive date time
+assert_eq!(
+    format_primitive_date_time("%Y-%m-%d %H:%M:%S", dt).unwrap(),
+    "2022-03-06 12:34:56"
+);
+// Format offset date time
+assert_eq!(
+    format_offset_date_time("%Y-%m-%d %H:%M:%S %z", dt.assume_timezone(tokyo)).unwrap(),
+    "2022-03-06 12:34:56 +0900"
+);
+// With timezone_name feature
+assert_eq!(
+    format_zoned_date_time("%Y-%m-%d %H:%M:%S %Z", dt, tokyo).unwrap(),
+    "2022-03-06 12:34:56 JST"
+);
+// Parse date time
+assert_eq!(
+    parse_date_time_maybe_with_zone("%Y-%m-%d %H:%M:%S %z", "2022-03-06 12:34:56 +0900")
+        .unwrap(),
+    (
+        dt,
+        Some(TimeZoneSpecifier::Offset(
+            UtcOffset::from_hms(9, 0, 0).unwrap()
+        ))
+    )
+);
+```
+
+
 ## Pubilsh new version
 
 Note for myself.
