@@ -64,16 +64,19 @@ impl Nat for i32 {
 }
 impl Int for i32 {}
 
+#[derive(Debug)]
 enum ParsingYear {
     Unspecified,
     Year(i32),
     PrefixSuffix(i32, u8),
 }
+#[derive(Debug)]
 enum ParsingDayOfYear {
     Unspecified,
     MonthDay(Month, u8),
     DayOfYear(u16),
 }
+#[derive(Debug)]
 enum ParsingHour {
     Unspecified,
     FullDay(u8),
@@ -295,7 +298,7 @@ impl<'a> Collector for ParseCollector<'a> {
         if (1..=12).contains(&hour) {
             let hour = hour % 12;
             match &mut self.hour {
-                ParsingHour::Unspecified => self.hour = ParsingHour::FullDay(hour),
+                ParsingHour::Unspecified => self.hour = ParsingHour::HalfDay(hour, false),
                 // Prefer full day over halfday + am/pm.
                 ParsingHour::FullDay(_) => {}
                 ParsingHour::HalfDay(current, _) => *current = hour,
@@ -509,7 +512,7 @@ impl<'a> Collector for ParseCollector<'a> {
                 if ampm {
                     h + 12
                 } else {
-                    0
+                    h
                 }
             }
         };
@@ -561,6 +564,58 @@ mod tests {
         assert_eq!(
             parse_date_time_maybe_with_zone("%D", "3 /6/22")?,
             (datetime!(2022-03-06 00:00:00), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%F", "2022-03-06")?,
+            (datetime!(2022-03-06 00:00:00), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%H", "2")?,
+            (datetime!(1900-01-01 2:00:00), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%k", "2")?,
+            (datetime!(1900-01-01 2:00:00), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%I", "2")?,
+            (datetime!(1900-01-01 2:00:00), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%l", "12")?,
+            (datetime!(1900-01-01 00:00:00), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%j", "38")?,
+            (datetime!(1900-02-07 00:00:00), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%m", "8")?,
+            (datetime!(1900-08-01 00:00:00), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%M", "8")?,
+            (datetime!(1900-01-01 00:08:00), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%n%t ", "   ")?,
+            (datetime!(1900-01-01 00:00:00), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%I %p", "12 AM")?,
+            (datetime!(1900-01-01 00:00:00), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%I %p", "1 AM")?,
+            (datetime!(1900-01-01 01:00:00), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%I %p", "1 pm")?,
+            (datetime!(1900-01-01 13:00:00), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%I %p", "12 pm")?,
+            (datetime!(1900-01-01 12:00:00), None)
         );
         Ok(())
     }
