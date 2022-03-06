@@ -336,7 +336,7 @@ pub fn format_zoned_date_time(
 
 #[cfg(test)]
 mod tests {
-    use super::{format_offset_date_time, format_primitive_date_time, format_zoned_date_time};
+    use super::{format_offset_date_time, format_primitive_date_time};
     use time::{
         macros::{datetime, offset},
         PrimitiveDateTime,
@@ -356,7 +356,7 @@ mod tests {
             );
             #[cfg(feature = "timezone_name")]
             assert_eq!(
-                format_zoned_date_time(fmt, dt, time_tz::timezones::db::asia::TOKYO)?,
+                super::format_zoned_date_time(fmt, dt, time_tz::timezones::db::asia::TOKYO)?,
                 expected
             );
             Ok(())
