@@ -617,6 +617,58 @@ mod tests {
             parse_date_time_maybe_with_zone("%I %p", "12 pm")?,
             (datetime!(1900-01-01 12:00:00), None)
         );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%r", "12:34:56 PM")?,
+            (datetime!(1900-01-01 12:34:56), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%r", "12:34:56 AM")?,
+            (datetime!(1900-01-01 00:34:56), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%R", "12: 4")?,
+            (datetime!(1900-01-01 12:04:00), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%S", "01")?,
+            (datetime!(1900-01-01 00:00:01), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%T", "01:23:45")?,
+            (datetime!(1900-01-01 01:23:45), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%U", "1")?,
+            (datetime!(1900-01-01 00:00:00), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%w", "1")?,
+            (datetime!(1900-01-01 00:00:00), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%W", "1")?,
+            (datetime!(1900-01-01 00:00:00), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%x", "3/6/22")?,
+            (datetime!(2022-03-06 00:00:00), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%X", "12:34:5")?,
+            (datetime!(1900-01-01 12:34:05), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%y", "12")?,
+            (datetime!(2012-01-01 00:00:00), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%y", "70")?,
+            (datetime!(1970-01-01 00:00:00), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%Y", "70")?,
+            (datetime!(0070-01-01 00:00:00), None)
+        );
         Ok(())
     }
 
