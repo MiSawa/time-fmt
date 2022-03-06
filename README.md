@@ -2,7 +2,9 @@
 
 # time-fmt
 
-This is a library that formats/parses datetime of the [time crate](https://github.com/time-rs/time) with somewhat more `strftime`/`strptime`-compatible format specification.
+This is a library that formats/parses datetime of the [time crate](https://github.com/time-rs/time) with _somewhat_ more `strftime`/`strptime`-compatible format specification.
+
+**You should really use the format of the time crate**, if there's no strong reason not to.
 
 ## Features
 
