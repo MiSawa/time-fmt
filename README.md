@@ -9,7 +9,7 @@ This is a library that formats/parses datetime of the [time crate](https://githu
 - ANSI/ISO C `strftime`-like function.
   - `%C`, `%d`, `%D`, `%e`, `%F`, `%g`, `%G`, `%h`, `%H`, `%I`, `%j`, `%k`, `%l`, `%m`, `%M`, `%n`, `%R`, `%S`, `%t`, `%T`, `%u`, `%U`, `%V`, `%w`, `%W`, `%y`, `%Y`, `%%`.
   - Those treated as if you were in C/POSIX locale: `%a`, `%A`, `%b`, `%B`, `%c`, `%p`, `%P`, `%r`, `%x`, `%X`.
-  - Available-ish in some functions (see: incompatibilities section): `%z`, `%Z`.
+  - Available-ish (see: incompatibilities section): `%z`, `%Z`.
 - POSIX C `strptime`-like function.
   - `%C`, `%d`, `%D`, `%e`, `%F`, `%h`, `%H`, `%I`, `%j`, `%k`, `%l`, `%m`, `%M`, `%n`, `%R`, `%S`, `%t`, `%T`, `%W`, `%y`, `%Y`, `%%`.
   - Those treated as if you were in C/POSIX locale: `%b`, `%B`, `%c`, `%p`, `%P`, `%r`, `%x`, `%X`
@@ -38,6 +38,7 @@ This is a library that formats/parses datetime of the [time crate](https://githu
   - Day of week specifiers, week of year specifiers, namely `%a`, `%A`, `%U`, and `%w` are matched to the input but ignored.
   - Since our structure that represents date/time are not something like `struct tm` of C language, inconsistent input will result in an unspecified behavior.
     - For example, one can specify the month, the day of the month, and the day of the year. But it's unclear what to do if the day of the year doesn't match what (month, day of the month) pair says. Currently it choose what day of the year says, it may be changed to do something else, for example returning `Result::Err` in a future release *without bumping the major version*.
+  - Offset/timezone info given by `%z`, `%Z` are not refleted to the returned date time. Instead, we return a pair of `PrimitiveDateTime` and the parsed offset / timezone name.
 - Convertion to `Vec<FormatItem>`
   - `%C` (century) and `%Z` (timezone name) are unsupported as no corresponding `FormatItem` exists.
 

@@ -10,7 +10,7 @@ readme = "README.md"
 exclude = [".github", "release.toml"]
 
 [features]
-default = ["timezone_name"]
+default = []
 timezone_name = ["time-tz"]
 
 [dependencies]
