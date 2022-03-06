@@ -61,6 +61,23 @@ impl<'a, W: Write> FormatCollector<'a, W> {
             write,
         }
     }
+
+    #[cfg(feature = "timezone_name")]
+    fn from_zoned_offset_date_time(
+        date_time: OffsetDateTime,
+        zone: &'a Tz,
+        write: &'a mut W,
+    ) -> Self {
+        let offset = zone.get_offset_utc(&date_time);
+        let date_time = date_time.to_offset(offset.to_utc());
+        Self {
+            date: date_time.date(),
+            time: date_time.time(),
+            offset: Some(offset.to_utc()),
+            zone: Some(offset),
+            write,
+        }
+    }
 }
 
 impl<'a, W: Write> Collector for FormatCollector<'a, W> {
@@ -334,6 +351,18 @@ pub fn format_zoned_date_time(
     Ok(ret)
 }
 
+#[cfg(feature = "timezone_name")]
+pub fn format_offset_date_time_in_zone(
+    fmt: &str,
+    date_time: OffsetDateTime,
+    zone: &'static Tz,
+) -> Result<String, Error> {
+    let mut ret = String::new();
+    let collector = FormatCollector::from_zoned_offset_date_time(date_time, zone, &mut ret);
+    spec_parser::parse_conversion_specifications(fmt, collector)?;
+    Ok(ret)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{format_offset_date_time, format_primitive_date_time};
@@ -450,13 +479,18 @@ mod tests {
     #[cfg(feature = "timezone_name")]
     #[test]
     fn test_timezone_name() -> Result<(), super::Error> {
-        use super::format_zoned_date_time;
+        use super::{format_offset_date_time_in_zone, format_zoned_date_time};
         use time_tz::timezones;
         let tokyo = timezones::db::asia::TOKYO;
 
         assert_eq!(
             format_zoned_date_time("%z %Z", datetime!(2022-02-02 02:02:02), tokyo)?,
             "+0900 JST".to_string()
+        );
+
+        assert_eq!(
+            format_offset_date_time_in_zone("%T %z %Z", datetime!(2022-02-02 02:02:02 UTC), tokyo)?,
+            "11:02:02 +0900 JST".to_string()
         );
         Ok(())
     }
