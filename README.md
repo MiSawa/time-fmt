@@ -84,12 +84,12 @@ assert_eq!(
 ```
 
 
-## Pubilsh new version
+## Publish new version
 
 Note for myself.
 
 ```shell
-$ git swithc master                 # make sure you're on the master branch
+$ git switch master                 # make sure you're on the master branch
 $ cargo release patch               # to dry-run the release
 $ cargo release patch --execute     # to actually execute the release
 ```
