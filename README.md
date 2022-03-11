@@ -33,7 +33,7 @@ This is a library that formats/parses datetime of the [time crate](https://githu
   - Era-based formats, namely those starts with `%E` are unsupported.
   - Alternative numeric symbols, namely those starts with `%O` are unsupported.
   - `%z` doesn't work if you passed `PrimitiveDateTime`. It'll be substituted to the empty string, as if "no time zone is determinable".
-  - `%Z` works only if you have `timezone_name` feature flag enabled, and passed `PrimitiveDateTime` + `Tz`. Otherwise substituted to the empty string, as if "no time zone is determinable".
+  - `%Z` works only if you used a function that takes a zone name. Otherwise substituted to the empty string, as if "no time zone is determinable".
   - `%` followed by a character that doesn't compose a conversion specifier that *we* support will result into an error.
 - `strptime`-like ones
   - Years has to fit in 4 bytes, i.e. before the year -999 or after the year 9999 are unsupported.
@@ -48,36 +48,34 @@ This is a library that formats/parses datetime of the [time crate](https://githu
 ## Examples
 
 ```rust
-use time::{macros::datetime, UtcOffset};
+use time::{macros::{datetime, offset}, UtcOffset};
 use time_fmt::{format::*, parse::*};
-use time_tz::{timezones, PrimitiveDateTimeExt};
 
-let tokyo = timezones::db::asia::TOKYO;
 let dt = datetime!(2022-03-06 12:34:56);
 
 // Format primitive date time
 assert_eq!(
-    format_primitive_date_time("%Y-%m-%d %H:%M:%S", dt).unwrap(),
+    format_date_time("%Y-%m-%d %H:%M:%S", dt).unwrap(),
     "2022-03-06 12:34:56"
 );
 // Format offset date time
 assert_eq!(
-    format_offset_date_time("%Y-%m-%d %H:%M:%S %z", dt.assume_timezone(tokyo)).unwrap(),
+    format_offset_date_time("%Y-%m-%d %H:%M:%S %z", dt.assume_offset(offset!(+9:00))).unwrap(),
     "2022-03-06 12:34:56 +0900"
 );
 // With timezone_name feature
 assert_eq!(
-    format_zoned_date_time("%Y-%m-%d %H:%M:%S %Z", dt, tokyo).unwrap(),
+    format_zoned_date_time("%Y-%m-%d %H:%M:%S %Z", dt, offset!(+9:00), "JST").unwrap(),
     "2022-03-06 12:34:56 JST"
 );
 // Parse date time
 assert_eq!(
     parse_date_time_maybe_with_zone("%Y-%m-%d %H:%M:%S %z", "2022-03-06 12:34:56 +0900")
-        .unwrap(),
+    .unwrap(),
     (
         dt,
         Some(TimeZoneSpecifier::Offset(
-            UtcOffset::from_hms(9, 0, 0).unwrap()
+                UtcOffset::from_hms(9, 0, 0).unwrap()
         ))
     )
 );

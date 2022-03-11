@@ -2,8 +2,6 @@ use std::fmt::Write;
 
 use thiserror::Error;
 use time::{Date, OffsetDateTime, PrimitiveDateTime, Time, UtcOffset};
-#[cfg(feature = "timezone_name")]
-use time_tz::{Offset, PrimitiveDateTimeExt, TimeZone, Tz};
 
 use crate::{format::spec_parser::Collector, util};
 
@@ -23,8 +21,7 @@ struct FormatCollector<'a, W: Write> {
     date: Date,
     time: Time,
     offset: Option<UtcOffset>,
-    #[cfg(feature = "timezone_name")]
-    zone: Option<<Tz as TimeZone>::Offset>,
+    zone_name: Option<&'a str>,
     write: &'a mut W,
 }
 impl<'a, W: Write> FormatCollector<'a, W> {
@@ -33,8 +30,7 @@ impl<'a, W: Write> FormatCollector<'a, W> {
             date: date_time.date(),
             time: date_time.time(),
             offset: None,
-            #[cfg(feature = "timezone_name")]
-            zone: None,
+            zone_name: None,
             write,
         }
     }
@@ -43,38 +39,36 @@ impl<'a, W: Write> FormatCollector<'a, W> {
             date: date_time.date(),
             time: date_time.time(),
             offset: Some(date_time.offset()),
-            #[cfg(feature = "timezone_name")]
-            zone: None,
+            zone_name: None,
             write,
         }
     }
 
-    #[cfg(feature = "timezone_name")]
-    fn from_zoned_date_time(date_time: PrimitiveDateTime, zone: &'a Tz, write: &'a mut W) -> Self {
-        let offset_datetime = date_time.assume_timezone(zone);
-        let offset: <Tz as TimeZone>::Offset = zone.get_offset_utc(&offset_datetime);
-        Self {
-            date: date_time.date(),
-            time: date_time.time(),
-            offset: Some(offset.to_utc()),
-            zone: Some(offset),
-            write,
-        }
-    }
-
-    #[cfg(feature = "timezone_name")]
-    fn from_zoned_offset_date_time(
-        date_time: OffsetDateTime,
-        zone: &'a Tz,
+    fn from_zoned_date_time(
+        date_time: PrimitiveDateTime,
+        offset: UtcOffset,
+        zone_name: &'a str,
         write: &'a mut W,
     ) -> Self {
-        let offset = zone.get_offset_utc(&date_time);
-        let date_time = date_time.to_offset(offset.to_utc());
         Self {
             date: date_time.date(),
             time: date_time.time(),
-            offset: Some(offset.to_utc()),
-            zone: Some(offset),
+            offset: Some(offset),
+            zone_name: Some(zone_name),
+            write,
+        }
+    }
+
+    fn from_zoned_offset_date_time(
+        date_time: OffsetDateTime,
+        zone_name: &'a str,
+        write: &'a mut W,
+    ) -> Self {
+        Self {
+            date: date_time.date(),
+            time: date_time.time(),
+            offset: Some(date_time.offset()),
+            zone_name: Some(zone_name),
             write,
         }
     }
@@ -284,12 +278,8 @@ impl<'a, W: Write> Collector for FormatCollector<'a, W> {
 
     #[inline]
     fn timezone_name(&mut self) -> Result<(), Self::Error> {
-        cfg_if::cfg_if! {
-            if #[cfg(feature = "timezone_name")] {
-                if let Some(zone) = &self.zone {
-                    self.write.write_str(zone.name())?;
-                }
-            }
+        if let Some(zone_name) = &self.zone_name {
+            self.write.write_str(zone_name)?;
         }
         // No bytes if no timezone information exists.
         Ok(())
@@ -322,50 +312,49 @@ impl<'a, W: Write> Collector for FormatCollector<'a, W> {
     }
 }
 
-pub fn format_primitive_date_time(
-    fmt: &str,
-    date_time: PrimitiveDateTime,
-) -> Result<String, FormatError> {
+pub fn format_date_time(fmt: &str, date_time: PrimitiveDateTime) -> Result<String, FormatError> {
     let mut ret = String::new();
     let collector = FormatCollector::from_date_time(date_time, &mut ret);
     spec_parser::parse_conversion_specifications(fmt, collector)?;
     Ok(ret)
 }
 
-pub fn format_offset_date_time(fmt: &str, date_time: OffsetDateTime) -> Result<String, FormatError> {
+pub fn format_offset_date_time(
+    fmt: &str,
+    date_time: OffsetDateTime,
+) -> Result<String, FormatError> {
     let mut ret = String::new();
     let collector = FormatCollector::from_offset_date_time(date_time, &mut ret);
     spec_parser::parse_conversion_specifications(fmt, collector)?;
     Ok(ret)
 }
 
-#[cfg(feature = "timezone_name")]
 pub fn format_zoned_date_time(
     fmt: &str,
     date_time: PrimitiveDateTime,
-    zone: &'static Tz,
+    offset: UtcOffset,
+    zone_name: &str,
 ) -> Result<String, FormatError> {
     let mut ret = String::new();
-    let collector = FormatCollector::from_zoned_date_time(date_time, zone, &mut ret);
+    let collector = FormatCollector::from_zoned_date_time(date_time, offset, zone_name, &mut ret);
     spec_parser::parse_conversion_specifications(fmt, collector)?;
     Ok(ret)
 }
 
-#[cfg(feature = "timezone_name")]
-pub fn format_offset_date_time_in_zone(
+pub fn format_zoned_offset_date_time(
     fmt: &str,
     date_time: OffsetDateTime,
-    zone: &'static Tz,
+    zone_name: &str,
 ) -> Result<String, FormatError> {
     let mut ret = String::new();
-    let collector = FormatCollector::from_zoned_offset_date_time(date_time, zone, &mut ret);
+    let collector = FormatCollector::from_zoned_offset_date_time(date_time, zone_name, &mut ret);
     spec_parser::parse_conversion_specifications(fmt, collector)?;
     Ok(ret)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{format_offset_date_time, format_primitive_date_time};
+    use super::{format_date_time, format_offset_date_time};
     use time::{
         macros::{datetime, offset},
         PrimitiveDateTime,
@@ -378,14 +367,17 @@ mod tests {
             dt: PrimitiveDateTime,
             expected: &str,
         ) -> Result<(), super::FormatError> {
-            assert_eq!(format_primitive_date_time(fmt, dt)?, expected);
+            assert_eq!(format_date_time(fmt, dt)?, expected);
             assert_eq!(
                 format_offset_date_time(fmt, dt.assume_offset(offset!(+9:00)))?,
                 expected
             );
-            #[cfg(feature = "timezone_name")]
             assert_eq!(
-                super::format_zoned_date_time(fmt, dt, time_tz::timezones::db::asia::TOKYO)?,
+                super::format_zoned_date_time(fmt, dt, offset!(+9:00), "JST")?,
+                expected
+            );
+            assert_eq!(
+                super::format_zoned_offset_date_time(fmt, dt.assume_offset(offset!(+9:00)), "JST")?,
                 expected
             );
             Ok(())
@@ -476,20 +468,26 @@ mod tests {
         Ok(())
     }
 
-    #[cfg(feature = "timezone_name")]
     #[test]
     fn test_timezone_name() -> Result<(), super::FormatError> {
-        use super::{format_offset_date_time_in_zone, format_zoned_date_time};
-        use time_tz::timezones;
-        let tokyo = timezones::db::asia::TOKYO;
+        use super::{format_zoned_date_time, format_zoned_offset_date_time};
 
         assert_eq!(
-            format_zoned_date_time("%z %Z", datetime!(2022-02-02 02:02:02), tokyo)?,
+            format_zoned_date_time(
+                "%z %Z",
+                datetime!(2022-02-02 02:02:02),
+                offset!(+9:00),
+                "JST"
+            )?,
             "+0900 JST".to_string()
         );
 
         assert_eq!(
-            format_offset_date_time_in_zone("%T %z %Z", datetime!(2022-02-02 02:02:02 UTC), tokyo)?,
+            format_zoned_offset_date_time(
+                "%T %z %Z",
+                datetime!(2022-02-02 02:02:02 UTC).to_offset(offset!(+9:00)),
+                "JST"
+            )?,
             "11:02:02 +0900 JST".to_string()
         );
         Ok(())
