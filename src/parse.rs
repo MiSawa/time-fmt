@@ -411,11 +411,8 @@ impl<'a> Collector for ParseCollector<'a> {
 
     #[inline]
     fn year_suffix(&mut self) -> Result<(), Self::Error> {
-        let mut y = self.parse_nat(2)?;
+        let y = self.parse_nat(2)?;
         if (0..100).contains(&y) {
-            if y < 70 {
-                y += 100;
-            }
             match &mut self.year {
                 ParsingYear::Unspecified => {
                     self.year = ParsingYear::PrefixSuffix(if y < 69 { 20 } else { 19 }, y)
@@ -668,6 +665,10 @@ mod tests {
         assert_eq!(
             parse_date_time_maybe_with_zone("%Y", "70")?,
             (datetime!(0070-01-01 00:00:00), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%C%y", "2022")?,
+            (datetime!(2022-01-01 00:00:00), None)
         );
         Ok(())
     }
