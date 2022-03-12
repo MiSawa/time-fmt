@@ -124,6 +124,11 @@ impl<'a> ParseCollector<'a> {
         res
     }
 
+    #[inline]
+    fn peek_byte(&self) -> Option<u8> {
+        self.s.bytes().next()
+    }
+
     /// Note: Need a change if pass max_len that makes us require checking for overflow.
     #[inline]
     fn parse_nat<N: Nat>(&mut self, max_len: usize) -> Result<N, ParseError> {
@@ -437,17 +442,22 @@ impl<'a> Collector for ParseCollector<'a> {
 
     #[inline]
     fn timezone(&mut self) -> Result<(), Self::Error> {
-        let z: i16 = self.parse_int(5)?;
-        let (h, m) = if z < 0 {
-            (-((-z) / 100), -((-z) % 100))
+        if self.peek_byte() == Some(b'Z') {
+            self.s = &self.s[1..];
+            self.zone = Some(TimeZoneSpecifier::Offset(UtcOffset::UTC));
         } else {
-            (z / 100, z % 100)
-        };
-        let h = h
-            .try_into()
-            .map_err(|_| Self::Error::ComponentOutOfRange("offset-hour"))?;
-        let m = m as i8;
-        self.zone = Some(TimeZoneSpecifier::Offset(UtcOffset::from_hms(h, m, 0)?));
+            let z: i16 = self.parse_int(5)?;
+            let (h, m) = if z < 0 {
+                (-((-z) / 100), -((-z) % 100))
+            } else {
+                (z / 100, z % 100)
+            };
+            let h = h
+                .try_into()
+                .map_err(|_| Self::Error::ComponentOutOfRange("offset-hour"))?;
+            let m = m as i8;
+            self.zone = Some(TimeZoneSpecifier::Offset(UtcOffset::from_hms(h, m, 0)?));
+        }
         Ok(())
     }
 
@@ -678,6 +688,20 @@ mod tests {
         assert_eq!(
             parse_date_time_maybe_with_zone("%FT%TZ", "2022-03-06T12:34:56Z")?,
             (datetime!(2022-03-06 12:34:56), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%FT%T%z", "2022-03-06T12:34:56Z")?,
+            (
+                datetime!(2022-03-06 12:34:56),
+                Some(TimeZoneSpecifier::Offset(offset!(+00:00)))
+            )
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%FT%T%Z", "2022-03-06T12:34:56Z")?,
+            (
+                datetime!(2022-03-06 12:34:56),
+                Some(TimeZoneSpecifier::Name("Z"))
+            )
         );
         assert_eq!(
             parse_date_time_maybe_with_zone("%FT%T %z", "2022-03-06T12:34:56 -1234")?,
