@@ -41,6 +41,7 @@ This is a library that formats/parses datetime of the [time crate](https://githu
   - Since our structure that represents date/time are not something like `struct tm` of C language, inconsistent input will result in an unspecified behavior.
     - For example, one can specify the month, the day of the month, and the day of the year. But it's unclear what to do if the day of the year doesn't match what (month, day of the month) pair says. Currently it choose what day of the year says, it may be changed to do something else, for example returning `Result::Err` in a future release *without bumping the major version*.
   - Offset/timezone info given by `%z`, `%Z` are not refleted to the returned date time. Instead, we return a pair of `PrimitiveDateTime` and the parsed offset / timezone name.
+    - If `Z` was given for `%z`, it will be treated as same as `+00:00`.
 - Convertion to `Vec<FormatItem>`
   - `%C` (century) and `%Z` (timezone name) are unsupported as no corresponding `FormatItem` exists.
 
