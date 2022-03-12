@@ -131,8 +131,8 @@ impl<'a> ParseCollector<'a> {
 
     /// Note: Need a change if pass max_len that makes us require checking for overflow.
     #[inline]
-    fn parse_nat<N: Nat>(&mut self, max_len: usize) -> Result<N, ParseError> {
-        if self.s.is_empty() {
+    fn parse_nat<N: Nat>(&mut self, min_len: usize, max_len: usize) -> Result<N, ParseError> {
+        if self.s.len() < min_len {
             return Err(ParseError::UnexpectedEnd("digits"));
         }
         let bytes = self.s.as_bytes();
@@ -142,7 +142,7 @@ impl<'a> ParseCollector<'a> {
         for &c in &bytes[..max_len] {
             if (b'0'..=b'9').contains(&c) {
                 res = (res * N::TEN) + N::from_u8(c - b'0');
-            } else if bytes_read == 0 {
+            } else if bytes_read < min_len {
                 return Err(ParseError::UnexpectedByte("digits", c));
             } else {
                 break;
@@ -265,7 +265,7 @@ impl<'a> Collector for ParseCollector<'a> {
 
     #[inline]
     fn day_of_month(&mut self) -> Result<(), Self::Error> {
-        let day = self.parse_nat(2)?;
+        let day = self.parse_nat(1, 2)?;
         if (1..=31).contains(&day) {
             match &mut self.day {
                 ParsingDayOfYear::Unspecified => {
@@ -283,7 +283,7 @@ impl<'a> Collector for ParseCollector<'a> {
 
     #[inline]
     fn hour_of_day(&mut self) -> Result<(), Self::Error> {
-        let hour = self.parse_nat(2)?;
+        let hour = self.parse_nat(1, 2)?;
         if (0..24).contains(&hour) {
             match &mut self.hour {
                 ParsingHour::Unspecified => self.hour = ParsingHour::FullDay(hour),
@@ -299,7 +299,7 @@ impl<'a> Collector for ParseCollector<'a> {
 
     #[inline]
     fn hour_of_day_12(&mut self) -> Result<(), Self::Error> {
-        let hour: u8 = self.parse_nat(2)?;
+        let hour: u8 = self.parse_nat(1, 2)?;
         if (1..=12).contains(&hour) {
             let hour = hour % 12;
             match &mut self.hour {
@@ -316,7 +316,7 @@ impl<'a> Collector for ParseCollector<'a> {
 
     #[inline]
     fn day_of_year(&mut self) -> Result<(), Self::Error> {
-        let day = self.parse_nat(3)?;
+        let day = self.parse_nat(1, 3)?;
         if (1..=366).contains(&day) {
             // Prefer day of year over (month, day)
             self.day = ParsingDayOfYear::DayOfYear(day);
@@ -328,7 +328,7 @@ impl<'a> Collector for ParseCollector<'a> {
 
     #[inline]
     fn month_of_year(&mut self) -> Result<(), Self::Error> {
-        let month = self.parse_nat(2)?;
+        let month = self.parse_nat(1, 2)?;
         if (1..=12).contains(&month) {
             let month = util::get_month(month).unwrap();
             match &mut self.day {
@@ -345,7 +345,7 @@ impl<'a> Collector for ParseCollector<'a> {
 
     #[inline]
     fn minute_of_hour(&mut self) -> Result<(), Self::Error> {
-        let minute = self.parse_nat(2)?;
+        let minute = self.parse_nat(1, 2)?;
         if (0..60).contains(&minute) {
             self.minute = minute;
             Ok(())
@@ -373,7 +373,7 @@ impl<'a> Collector for ParseCollector<'a> {
 
     #[inline]
     fn second_of_minute(&mut self) -> Result<(), Self::Error> {
-        let second = self.parse_nat(2)?;
+        let second = self.parse_nat(1, 2)?;
         if (0..61).contains(&second) {
             self.second = second;
             Ok(())
@@ -384,7 +384,7 @@ impl<'a> Collector for ParseCollector<'a> {
 
     #[inline]
     fn week_number_of_current_year_start_sunday(&mut self) -> Result<(), Self::Error> {
-        let w: u8 = self.parse_nat(2)?;
+        let w: u8 = self.parse_nat(1, 2)?;
         if (0..=53).contains(&w) {
             // Ignore it!
             Ok(())
@@ -395,7 +395,7 @@ impl<'a> Collector for ParseCollector<'a> {
 
     #[inline]
     fn day_of_week_from_sunday_as_0(&mut self) -> Result<(), Self::Error> {
-        let w: u8 = self.parse_nat(1)?;
+        let w: u8 = self.parse_nat(1, 1)?;
         if (0..7).contains(&w) {
             // Ignore it!
             Ok(())
@@ -406,7 +406,7 @@ impl<'a> Collector for ParseCollector<'a> {
 
     #[inline]
     fn week_number_of_current_year_start_monday(&mut self) -> Result<(), Self::Error> {
-        let w: u8 = self.parse_nat(2)?;
+        let w: u8 = self.parse_nat(1, 2)?;
         if (0..=53).contains(&w) {
             Ok(())
         } else {
@@ -416,7 +416,7 @@ impl<'a> Collector for ParseCollector<'a> {
 
     #[inline]
     fn year_suffix(&mut self) -> Result<(), Self::Error> {
-        let y = self.parse_nat(2)?;
+        let y = self.parse_nat(1, 2)?;
         if (0..100).contains(&y) {
             match &mut self.year {
                 ParsingYear::Unspecified => {
@@ -434,7 +434,7 @@ impl<'a> Collector for ParseCollector<'a> {
 
     #[inline]
     fn year(&mut self) -> Result<(), Self::Error> {
-        let y = self.parse_nat(4)?;
+        let y = self.parse_int(4)?;
         // Prefer year over (year prefix, year suffix).
         self.year = ParsingYear::Year(y);
         Ok(())
@@ -442,22 +442,32 @@ impl<'a> Collector for ParseCollector<'a> {
 
     #[inline]
     fn timezone(&mut self) -> Result<(), Self::Error> {
-        if self.peek_byte() == Some(b'Z') {
-            self.s = &self.s[1..];
-            self.zone = Some(TimeZoneSpecifier::Offset(UtcOffset::UTC));
-        } else {
-            let z: i16 = self.parse_int(5)?;
-            let (h, m) = if z < 0 {
-                (-((-z) / 100), -((-z) % 100))
-            } else {
-                (z / 100, z % 100)
-            };
-            let h = h
-                .try_into()
-                .map_err(|_| Self::Error::ComponentOutOfRange("offset-hour"))?;
-            let m = m as i8;
-            self.zone = Some(TimeZoneSpecifier::Offset(UtcOffset::from_hms(h, m, 0)?));
+        let negate = match self.peek_byte() {
+            Some(b'Z') => {
+                self.s = &self.s[1..]; // skip Z
+                self.zone = Some(TimeZoneSpecifier::Offset(UtcOffset::UTC));
+                return Ok(());
+            }
+            Some(c @ (b'+' | b'-')) => {
+                self.s = &self.s[1..]; // skip sign
+                c == b'-'
+            }
+            Some(b) => return Err(Self::Error::UnexpectedByte("+ or -", b)),
+            None => return Err(Self::Error::UnexpectedEnd("+ or -")),
+        };
+        let h: u8 = self.parse_nat(2, 2)?;
+        if self.peek_byte() == Some(b':') {
+            self.s = &self.s[1..]; // skip :
         }
+        let m: u8 = self.parse_nat(2, 2)?;
+        let h: i8 = h
+            .try_into()
+            .map_err(|_| Self::Error::ComponentOutOfRange("offset-hour"))?;
+        let m: i8 = m
+            .try_into()
+            .map_err(|_| Self::Error::ComponentOutOfRange("offset-minute"))?;
+        let (h, m) = if negate { (-h, -m) } else { (h, m) };
+        self.zone = Some(TimeZoneSpecifier::Offset(UtcOffset::from_hms(h, m, 0)?));
         Ok(())
     }
 
@@ -717,6 +727,16 @@ mod tests {
                 Some(TimeZoneSpecifier::Name("JST"))
             )
         );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%FT%T %z", "2022-03-06T12:34:56 -12:34")?,
+            (
+                datetime!(2022-03-06 12:34:56),
+                Some(TimeZoneSpecifier::Offset(offset!(-12:34)))
+            )
+        );
+        assert!(parse_date_time_maybe_with_zone("%FT%T %z", "2022-03-06T12:34:56 12:34").is_err());
+        assert!(parse_date_time_maybe_with_zone("%FT%T %z", "2022-03-06T12:34:56 +2:34").is_err());
+        assert!(parse_date_time_maybe_with_zone("%FT%T %z", "2022-03-06T12:34:56 +234").is_err());
         Ok(())
     }
 }
