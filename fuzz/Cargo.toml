@@ -1,0 +1,40 @@
+[package]
+name = "time-fmt-fuzz"
+version = "0.0.0"
+authors = ["mi_sawa <mi.sawa.1216+git@gmail.com>"]
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+arbitrary = { version = "1.1.0", features = ["derive"] }
+libfuzzer-sys = "0.4"
+time = "0.3.7"
+
+[dependencies.time-fmt]
+path = ".."
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "main"
+path = "fuzz_targets/main.rs"
+test = false
+doc = false
+
+[profile.release]
+opt-level = 3
+debug = true
+
+[profile.dev]
+opt-level = 3
+debug = true
+
+[profile.test]
+opt-level = 3
+debug = true
+

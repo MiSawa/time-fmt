@@ -190,7 +190,7 @@ impl<'a> ParseCollector<'a> {
 
     #[inline]
     fn starts_with_ignore_ascii_case(&self, prefix: &str) -> bool {
-        self.s.len() >= prefix.len() && self.s[..prefix.len()].eq_ignore_ascii_case(prefix)
+        self.s.len() >= prefix.len() && self.s.is_char_boundary(prefix.len()) && self.s[..prefix.len()].eq_ignore_ascii_case(prefix)
     }
 }
 
