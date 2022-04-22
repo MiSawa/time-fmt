@@ -365,6 +365,8 @@ impl<'a> Collector for ParseCollector<'a> {
                     ParsingHour::FullDay(_) => {}
                     ParsingHour::HalfDay(_, current) => *current = h != 0,
                 }
+                // Consume AM/PM substring
+                self.s = &self.s[2..];
                 return Ok(());
             }
         }
@@ -641,6 +643,10 @@ mod tests {
         assert_eq!(
             parse_date_time_maybe_with_zone("%r", "12:34:56 AM")?,
             (datetime!(1900-01-01 00:34:56), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%r %F", "12:34:56 AM 2022-03-06")?,
+            (datetime!(2022-03-06 00:34:56), None)
         );
         assert_eq!(
             parse_date_time_maybe_with_zone("%R", "12: 4")?,
