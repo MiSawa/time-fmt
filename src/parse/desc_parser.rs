@@ -95,6 +95,8 @@ pub(crate) trait Collector {
     }
     /// `%S`. `00` to `60`.
     fn second_of_minute(&mut self) -> Result<(), Self::Error>;
+    /// `%f`. `000000000` to `999999999`.
+    fn nanosecond_of_minute(&mut self) -> Result<(), Self::Error>;
     /// `%t`.
     #[inline]
     fn tab(&mut self) -> Result<(), Self::Error> {
@@ -213,6 +215,7 @@ pub(crate) fn parse_format_specifications<C: Collector>(
                 b'r' => collector.time_ampm()?,
                 b'R' => collector.hour_minute_of_day()?,
                 b'S' => collector.second_of_minute()?,
+                b'f' => collector.nanosecond_of_minute()?,
                 b't' => collector.tab()?,
                 b'T' => collector.time_of_day()?,
                 b'U' => collector.week_number_of_current_year_start_sunday()?,
