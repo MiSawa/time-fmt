@@ -198,7 +198,7 @@ impl<'a> Collector for ToFormatItemCollector<'a> {
     }
 
     #[inline]
-    fn nanosecond_of_minute(&mut self) -> Result<(), Self::Error> {
+    fn nanosecond_of_second(&mut self) -> Result<(), Self::Error> {
         let modifier = modifier::Subsecond::default();
         self.items
             .push(FormatItem::Component(Component::Subsecond(modifier)));

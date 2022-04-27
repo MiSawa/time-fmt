@@ -211,7 +211,7 @@ impl<'a, W: Write> Collector for FormatCollector<'a, W> {
     }
 
     #[inline]
-    fn nanosecond_of_minute(&mut self) -> Result<(), Self::Error> {
+    fn nanosecond_of_second(&mut self) -> Result<(), Self::Error> {
         let nanoseconds = self.time.nanosecond();
 
         let keep_digits: usize = if nanoseconds % 10 != 0 {

@@ -394,7 +394,7 @@ impl<'a> Collector for ParseCollector<'a> {
     }
 
     #[inline]
-    fn nanosecond_of_minute(&mut self) -> Result<(), Self::Error> {
+    fn nanosecond_of_second(&mut self) -> Result<(), Self::Error> {
         let input_length = self.s.len();
         let nanosecond: u32 = self.parse_nat(1, 9)?;
 
