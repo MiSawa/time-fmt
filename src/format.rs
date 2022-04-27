@@ -233,7 +233,7 @@ impl<'a, W: Write> Collector for FormatCollector<'a, W> {
         } else if (nanoseconds / 100_000_000) % 10 != 0 {
             1
         } else {
-            0
+            9
         };
 
         let nanos_string = nanoseconds.to_string();
@@ -464,6 +464,7 @@ mod tests {
         test_datetime("%Y", datetime, "2022")?;
         test_datetime("%%", datetime, "%")?;
 
+        let datetime_ms0 = datetime!(2022-03-06 02:04:06);
         let datetime_ms1 = datetime!(2022-03-06 02:04:06.1);
         let datetime_ms2 = datetime!(2022-03-06 02:04:06.12);
         let datetime_ms3 = datetime!(2022-03-06 02:04:06.123);
@@ -474,6 +475,7 @@ mod tests {
         let datetime_ms8 = datetime!(2022-03-06 02:04:06.12345678);
         let datetime_ms9 = datetime!(2022-03-06 02:04:06.123456789);
 
+        test_datetime("%f", datetime_ms0, "000000000")?;
         test_datetime("%f", datetime_ms1, "1")?;
         test_datetime("%f", datetime_ms2, "12")?;
         test_datetime("%f", datetime_ms3, "123")?;
