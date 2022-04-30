@@ -212,39 +212,8 @@ impl<'a, W: Write> Collector for FormatCollector<'a, W> {
 
     #[inline]
     fn nanosecond_of_second(&mut self) -> Result<(), Self::Error> {
-        let nanoseconds = self.time.nanosecond();
-
-        let keep_digits: usize = if nanoseconds % 10 != 0 {
-            9
-        } else if (nanoseconds / 10) % 10 != 0 {
-            8
-        } else if (nanoseconds / 100) % 10 != 0 {
-            7
-        } else if (nanoseconds / 1_000) % 10 != 0 {
-            6
-        } else if (nanoseconds / 10_000) % 10 != 0 {
-            5
-        } else if (nanoseconds / 100_000) % 10 != 0 {
-            4
-        } else if (nanoseconds / 1_000_000) % 10 != 0 {
-            3
-        } else if (nanoseconds / 10_000_000) % 10 != 0 {
-            2
-        } else if (nanoseconds / 100_000_000) % 10 != 0 {
-            1
-        } else {
-            9
-        };
-
-        let nanos_string = nanoseconds.to_string();
-        let zeros_padding: usize = if nanos_string.len() == 9 { 0 } else { 9 };
-
         self.write
-            .write_fmt(
-                format_args!("{:0>padding$.precision$}", 
-                nanos_string, precision = keep_digits, padding = zeros_padding)
-            )?;
-
+            .write_fmt(format_args!("{:0>9}", self.time.nanosecond()))?;
         Ok(())
     }
 
@@ -476,14 +445,14 @@ mod tests {
         let datetime_ms9 = datetime!(2022-03-06 02:04:06.123456789);
 
         test_datetime("%f", datetime_ms0, "000000000")?;
-        test_datetime("%f", datetime_ms1, "1")?;
-        test_datetime("%f", datetime_ms2, "12")?;
-        test_datetime("%f", datetime_ms3, "123")?;
-        test_datetime("%f", datetime_ms4, "1234")?;
-        test_datetime("%f", datetime_ms5, "12345")?;
-        test_datetime("%f", datetime_ms6, "123456")?;
-        test_datetime("%f", datetime_ms7, "1234567")?;
-        test_datetime("%f", datetime_ms8, "12345678")?;
+        test_datetime("%f", datetime_ms1, "100000000")?;
+        test_datetime("%f", datetime_ms2, "120000000")?;
+        test_datetime("%f", datetime_ms3, "123000000")?;
+        test_datetime("%f", datetime_ms4, "123400000")?;
+        test_datetime("%f", datetime_ms5, "123450000")?;
+        test_datetime("%f", datetime_ms6, "123456000")?;
+        test_datetime("%f", datetime_ms7, "123456700")?;
+        test_datetime("%f", datetime_ms8, "123456780")?;
         test_datetime("%f", datetime_ms9, "123456789")?;
 
         let datetime_ms1 = datetime!(2022-03-06 02:04:06.900000000);
@@ -495,14 +464,14 @@ mod tests {
         let datetime_ms7 = datetime!(2022-03-06 02:04:06.987654300);
         let datetime_ms8 = datetime!(2022-03-06 02:04:06.987654320);
 
-        test_datetime("%f", datetime_ms1, "9")?;
-        test_datetime("%f", datetime_ms2, "98")?;
-        test_datetime("%f", datetime_ms3, "987")?;
-        test_datetime("%f", datetime_ms4, "9876")?;
-        test_datetime("%f", datetime_ms5, "98765")?;
-        test_datetime("%f", datetime_ms6, "987654")?;
-        test_datetime("%f", datetime_ms7, "9876543")?;
-        test_datetime("%f", datetime_ms8, "98765432")?;
+        test_datetime("%f", datetime_ms1, "900000000")?;
+        test_datetime("%f", datetime_ms2, "980000000")?;
+        test_datetime("%f", datetime_ms3, "987000000")?;
+        test_datetime("%f", datetime_ms4, "987600000")?;
+        test_datetime("%f", datetime_ms5, "987650000")?;
+        test_datetime("%f", datetime_ms6, "987654000")?;
+        test_datetime("%f", datetime_ms7, "987654300")?;
+        test_datetime("%f", datetime_ms8, "987654320")?;
 
         let datetime_ms1 = datetime!(2022-03-06 02:04:06.000000002);
         let datetime_ms2 = datetime!(2022-03-06 02:04:06.000000022);
