@@ -211,6 +211,13 @@ impl<'a, W: Write> Collector for FormatCollector<'a, W> {
     }
 
     #[inline]
+    fn nanosecond_of_second(&mut self) -> Result<(), Self::Error> {
+        self.write
+            .write_fmt(format_args!("{:0>9}", self.time.nanosecond()))?;
+        Ok(())
+    }
+
+    #[inline]
     fn day_of_week_from_monday_as_1(&mut self) -> Result<(), Self::Error> {
         self.write
             .write_fmt(format_args!("{}", self.date.weekday().number_from_monday()))?;
@@ -425,6 +432,65 @@ mod tests {
         test_datetime("%y", datetime, "22")?;
         test_datetime("%Y", datetime, "2022")?;
         test_datetime("%%", datetime, "%")?;
+
+        let datetime_ms0 = datetime!(2022-03-06 02:04:06);
+        let datetime_ms1 = datetime!(2022-03-06 02:04:06.1);
+        let datetime_ms2 = datetime!(2022-03-06 02:04:06.12);
+        let datetime_ms3 = datetime!(2022-03-06 02:04:06.123);
+        let datetime_ms4 = datetime!(2022-03-06 02:04:06.1234);
+        let datetime_ms5 = datetime!(2022-03-06 02:04:06.12345);
+        let datetime_ms6 = datetime!(2022-03-06 02:04:06.123456);
+        let datetime_ms7 = datetime!(2022-03-06 02:04:06.1234567);
+        let datetime_ms8 = datetime!(2022-03-06 02:04:06.12345678);
+        let datetime_ms9 = datetime!(2022-03-06 02:04:06.123456789);
+
+        test_datetime("%f", datetime_ms0, "000000000")?;
+        test_datetime("%f", datetime_ms1, "100000000")?;
+        test_datetime("%f", datetime_ms2, "120000000")?;
+        test_datetime("%f", datetime_ms3, "123000000")?;
+        test_datetime("%f", datetime_ms4, "123400000")?;
+        test_datetime("%f", datetime_ms5, "123450000")?;
+        test_datetime("%f", datetime_ms6, "123456000")?;
+        test_datetime("%f", datetime_ms7, "123456700")?;
+        test_datetime("%f", datetime_ms8, "123456780")?;
+        test_datetime("%f", datetime_ms9, "123456789")?;
+
+        let datetime_ms1 = datetime!(2022-03-06 02:04:06.900000000);
+        let datetime_ms2 = datetime!(2022-03-06 02:04:06.980000000);
+        let datetime_ms3 = datetime!(2022-03-06 02:04:06.987000000);
+        let datetime_ms4 = datetime!(2022-03-06 02:04:06.987600000);
+        let datetime_ms5 = datetime!(2022-03-06 02:04:06.987650000);
+        let datetime_ms6 = datetime!(2022-03-06 02:04:06.987654000);
+        let datetime_ms7 = datetime!(2022-03-06 02:04:06.987654300);
+        let datetime_ms8 = datetime!(2022-03-06 02:04:06.987654320);
+
+        test_datetime("%f", datetime_ms1, "900000000")?;
+        test_datetime("%f", datetime_ms2, "980000000")?;
+        test_datetime("%f", datetime_ms3, "987000000")?;
+        test_datetime("%f", datetime_ms4, "987600000")?;
+        test_datetime("%f", datetime_ms5, "987650000")?;
+        test_datetime("%f", datetime_ms6, "987654000")?;
+        test_datetime("%f", datetime_ms7, "987654300")?;
+        test_datetime("%f", datetime_ms8, "987654320")?;
+
+        let datetime_ms1 = datetime!(2022-03-06 02:04:06.000000002);
+        let datetime_ms2 = datetime!(2022-03-06 02:04:06.000000022);
+        let datetime_ms3 = datetime!(2022-03-06 02:04:06.000000222);
+        let datetime_ms4 = datetime!(2022-03-06 02:04:06.000002222);
+        let datetime_ms5 = datetime!(2022-03-06 02:04:06.000022222);
+        let datetime_ms6 = datetime!(2022-03-06 02:04:06.000222222);
+        let datetime_ms7 = datetime!(2022-03-06 02:04:06.002222222);
+        let datetime_ms8 = datetime!(2022-03-06 02:04:06.022222222);
+
+        test_datetime("%f", datetime_ms1, "000000002")?;
+        test_datetime("%f", datetime_ms2, "000000022")?;
+        test_datetime("%f", datetime_ms3, "000000222")?;
+        test_datetime("%f", datetime_ms4, "000002222")?;
+        test_datetime("%f", datetime_ms5, "000022222")?;
+        test_datetime("%f", datetime_ms6, "000222222")?;
+        test_datetime("%f", datetime_ms7, "002222222")?;
+        test_datetime("%f", datetime_ms8, "022222222")?;
+
         Ok(())
     }
 

@@ -47,6 +47,13 @@ impl Nat for u16 {
         v as u16
     }
 }
+impl Nat for u32 {
+    const ZERO: Self = 0;
+    const TEN: Self = 10;
+    fn from_u8(v: u8) -> Self {
+        v as u32
+    }
+}
 impl Nat for i16 {
     const ZERO: Self = 0;
     const TEN: Self = 10;
@@ -96,6 +103,7 @@ struct ParseCollector<'a> {
     hour: ParsingHour,
     minute: u8,
     second: u8,
+    nanosecond: u32,
     zone: Option<TimeZoneSpecifier<'a>>,
 }
 impl<'a> ParseCollector<'a> {
@@ -107,6 +115,7 @@ impl<'a> ParseCollector<'a> {
             hour: ParsingHour::Unspecified,
             minute: 0,
             second: 0,
+            nanosecond: 0,
             zone: None,
         }
     }
@@ -385,6 +394,20 @@ impl<'a> Collector for ParseCollector<'a> {
     }
 
     #[inline]
+    fn nanosecond_of_second(&mut self) -> Result<(), Self::Error> {
+        let input_length = self.s.len();
+        let nanosecond: u32 = self.parse_nat(1, 9)?;
+
+        let digits_consumed = input_length - self.s.len();
+        static SCALE: [u32; 10] = [
+            0, 100_000_000, 10_000_000, 1_000_000, 100_000, 10_000, 1_000, 100, 10, 1
+        ];
+        self.nanosecond = nanosecond * SCALE[digits_consumed];
+
+        Ok(())
+    }
+
+    #[inline]
     fn week_number_of_current_year_start_sunday(&mut self) -> Result<(), Self::Error> {
         let w: u8 = self.parse_nat(1, 2)?;
         if (0..=53).contains(&w) {
@@ -535,7 +558,7 @@ impl<'a> Collector for ParseCollector<'a> {
                 }
             }
         };
-        let time = Time::from_hms(hour, self.minute, self.second)?;
+        let time = Time::from_hms_nano(hour, self.minute, self.second, self.nanosecond)?;
         let zone = self.zone;
         Ok((PrimitiveDateTime::new(date, time), zone))
     }
@@ -659,6 +682,18 @@ mod tests {
         assert_eq!(
             parse_date_time_maybe_with_zone("%T", "01:23:45")?,
             (datetime!(1900-01-01 01:23:45), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%T.%f", "01:23:45.123")?,
+            (datetime!(1900-01-01 01:23:45.123), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%T.%f", "01:23:45.12300")?,
+            (datetime!(1900-01-01 01:23:45.123), None)
+        );
+        assert_eq!(
+            parse_date_time_maybe_with_zone("%T.%f", "01:23:45.000001234")?,
+            (datetime!(1900-01-01 01:23:45.000001234), None)
         );
         assert_eq!(
             parse_date_time_maybe_with_zone("%U", "1")?,

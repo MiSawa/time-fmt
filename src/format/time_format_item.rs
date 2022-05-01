@@ -198,6 +198,14 @@ impl<'a> Collector for ToFormatItemCollector<'a> {
     }
 
     #[inline]
+    fn nanosecond_of_second(&mut self) -> Result<(), Self::Error> {
+        let modifier = modifier::Subsecond::default();
+        self.items
+            .push(FormatItem::Component(Component::Subsecond(modifier)));
+        Ok(())
+    }
+
+    #[inline]
     fn day_of_week_from_monday_as_1(&mut self) -> Result<(), Self::Error> {
         let mut modifier = modifier::Weekday::default();
         modifier.repr = modifier::WeekdayRepr::Monday;
