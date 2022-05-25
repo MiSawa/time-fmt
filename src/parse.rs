@@ -18,6 +18,8 @@ pub enum ParseError {
     NotMatch(&'static str),
     #[error("Out-of-range for {0} component")]
     ComponentOutOfRange(&'static str),
+    #[error("Unconverted data remains: {0}")]
+    UnconvertedDataRemains(String),
     #[error(transparent)]
     ComponentRange(#[from] time::error::ComponentRange),
 }
@@ -533,6 +535,16 @@ impl<'a> Collector for ParseCollector<'a> {
     }
 
     #[inline]
+    fn unconsumed_input(&self) -> Result<(), Self::Error> {
+        let unconsumed_input = self.s.to_string();
+        if unconsumed_input.len() > 0 {
+            Err(Self::Error::UnconvertedDataRemains(unconsumed_input))
+        } else {
+            Ok(())
+        }
+    }
+
+    #[inline]
     fn output(self) -> Result<Self::Output, Self::Error> {
         let year = match self.year {
             ParsingYear::Unspecified => 1900,
@@ -569,12 +581,20 @@ pub fn parse_date_time_maybe_with_zone<'a>(
     s: &'a str,
 ) -> Result<(PrimitiveDateTime, Option<TimeZoneSpecifier<'a>>), ParseError> {
     let collector = ParseCollector::new(s);
-    desc_parser::parse_format_specifications(fmt, collector)
+    desc_parser::parse_format_specifications(fmt, collector, false)
+}
+
+pub fn parse_strict_date_time_maybe_with_zone<'a>(
+    fmt: &str,
+    s: &'a str,
+) -> Result<(PrimitiveDateTime, Option<TimeZoneSpecifier<'a>>), ParseError> {
+    let collector = ParseCollector::new(s);
+    desc_parser::parse_format_specifications(fmt, collector, true)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_date_time_maybe_with_zone, TimeZoneSpecifier};
+    use super::{parse_date_time_maybe_with_zone, parse_strict_date_time_maybe_with_zone, ParseError, TimeZoneSpecifier};
     use time::macros::{datetime, offset};
 
     #[test]
@@ -732,6 +752,21 @@ mod tests {
             (datetime!(2022-01-01 00:00:00), None)
         );
         Ok(())
+    }
+
+    #[test]
+    fn test_strict() {
+        assert!(
+            matches!(
+                parse_strict_date_time_maybe_with_zone("%F", "2022-03-06T12:34:56Z"),
+                Err(ParseError::UnconvertedDataRemains(_)),
+            )
+        );
+
+        assert_eq!(
+            parse_strict_date_time_maybe_with_zone("%FT%TZ", "2022-03-06T12:34:56Z"),
+            Ok((datetime!(2022-03-06 12:34:56), None))
+        );
     }
 
     #[test]

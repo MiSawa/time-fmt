@@ -167,6 +167,9 @@ pub(crate) trait Collector {
     /// `%(something else)`.
     fn unknown(&mut self, specifier: char) -> Result<(), Self::Error>;
 
+    /// Check for remaining unconsumed input.
+    fn unconsumed_input(&self) -> Result<(), Self::Error>;
+
     /// Construct the final result from what you've collected.
     fn output(self) -> Result<Self::Output, Self::Error>;
 }
@@ -174,6 +177,7 @@ pub(crate) trait Collector {
 pub(crate) fn parse_format_specifications<C: Collector>(
     mut format: &str,
     mut collector: C,
+    strict: bool,
 ) -> Result<C::Output, C::Error> {
     let original_len = format.len();
     while !format.is_empty() {
@@ -240,5 +244,10 @@ pub(crate) fn parse_format_specifications<C: Collector>(
             collector.percent()?;
         }
     }
+    
+    if strict {
+        collector.unconsumed_input()?;
+    };
+
     collector.output()
 }
