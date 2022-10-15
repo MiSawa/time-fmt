@@ -201,7 +201,9 @@ impl<'a> ParseCollector<'a> {
 
     #[inline]
     fn starts_with_ignore_ascii_case(&self, prefix: &str) -> bool {
-        self.s.len() >= prefix.len() && self.s.is_char_boundary(prefix.len()) && self.s[..prefix.len()].eq_ignore_ascii_case(prefix)
+        self.s.len() >= prefix.len()
+            && self.s.is_char_boundary(prefix.len())
+            && self.s[..prefix.len()].eq_ignore_ascii_case(prefix)
     }
 }
 
@@ -402,7 +404,16 @@ impl<'a> Collector for ParseCollector<'a> {
 
         let digits_consumed = input_length - self.s.len();
         static SCALE: [u32; 10] = [
-            0, 100_000_000, 10_000_000, 1_000_000, 100_000, 10_000, 1_000, 100, 10, 1
+            0,
+            100_000_000,
+            10_000_000,
+            1_000_000,
+            100_000,
+            10_000,
+            1_000,
+            100,
+            10,
+            1,
         ];
         self.nanosecond = nanosecond * SCALE[digits_consumed];
 
@@ -594,7 +605,10 @@ pub fn parse_strict_date_time_maybe_with_zone<'a>(
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_date_time_maybe_with_zone, parse_strict_date_time_maybe_with_zone, ParseError, TimeZoneSpecifier};
+    use super::{
+        parse_date_time_maybe_with_zone, parse_strict_date_time_maybe_with_zone, ParseError,
+        TimeZoneSpecifier,
+    };
     use time::macros::{datetime, offset};
 
     #[test]
@@ -756,12 +770,10 @@ mod tests {
 
     #[test]
     fn test_strict() {
-        assert!(
-            matches!(
-                parse_strict_date_time_maybe_with_zone("%F", "2022-03-06T12:34:56Z"),
-                Err(ParseError::UnconvertedDataRemains(_)),
-            )
-        );
+        assert!(matches!(
+            parse_strict_date_time_maybe_with_zone("%F", "2022-03-06T12:34:56Z"),
+            Err(ParseError::UnconvertedDataRemains(_)),
+        ));
 
         assert_eq!(
             parse_strict_date_time_maybe_with_zone("%FT%TZ", "2022-03-06T12:34:56Z"),

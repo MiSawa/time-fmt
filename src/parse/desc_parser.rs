@@ -244,7 +244,7 @@ pub(crate) fn parse_format_specifications<C: Collector>(
             collector.percent()?;
         }
     }
-    
+
     if strict {
         collector.unconsumed_input()?;
     };
