@@ -320,7 +320,7 @@ pub fn parse_to_format_item(fmt: &str) -> Result<Vec<FormatItem>, Error> {
 
 #[cfg(test)]
 mod tests {
-    use time::{macros::datetime, OffsetDateTime, PrimitiveDateTime};
+    use time::macros::datetime;
 
     use super::parse_to_format_item;
 
@@ -337,8 +337,8 @@ mod tests {
     fn parse_primitive_datetime() -> Result<(), Box<dyn std::error::Error>> {
         let format_items = parse_to_format_item("%Y-%m-%d %H:%M:%S")?;
         assert_eq!(
-            PrimitiveDateTime::parse("2012-05-21 12:09:14", &format_items)?,
-            datetime!(2012-05-21 12:09:14)
+            datetime!(2012-05-21 12:09:14).format(&format_items)?,
+            "2012-05-21 12:09:14"
         );
         Ok(())
     }
@@ -347,8 +347,8 @@ mod tests {
     fn parse_offset_datetime() -> Result<(), Box<dyn std::error::Error>> {
         let format_items = parse_to_format_item("%Y-%m-%d %H:%M:%S %z")?;
         assert_eq!(
-            OffsetDateTime::parse("2012-05-21 12:09:14 +0900", &format_items)?,
-            datetime!(2012-05-21 12:09:14 +9:00)
+            datetime!(2012-05-21 12:09:14 +9:00).format(&format_items)?,
+            "2012-05-21 12:09:14 +0900"
         );
         Ok(())
     }
