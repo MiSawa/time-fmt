@@ -18,6 +18,7 @@ This is a library that formats/parses datetime of the [time crate](https://githu
   - Available-ish but the way handling the parsed value is delegated to the user: `%z`, `%Z`.
   - Those parsed (as if you were in C/POSIX locale) but ignored: `%a`, `%A`, `%U`, `%w`.
 - A function that converts `strftime`-like conversion specification to `Vec<FormatItem>` of the time crate.
+- A function that converts `strptime`-like conversion description to `Vec<FormatItem>` of the time crate.
 
 ## *Non*-features ...yet. Contributions are welcomed!
 
@@ -42,8 +43,12 @@ This is a library that formats/parses datetime of the [time crate](https://githu
     - For example, one can specify the month, the day of the month, and the day of the year. But it's unclear what to do if the day of the year doesn't match what (month, day of the month) pair says. Currently it choose what day of the year says, it may be changed to do something else, for example returning `Result::Err` in a future release *without bumping the major version*.
   - Offset/timezone info given by `%z`, `%Z` are not refleted to the returned date time. Instead, we return a pair of `PrimitiveDateTime` and the parsed offset / timezone name.
     - If `Z` was given for `%z`, it will be treated as same as `+00:00`.
-- Convertion to `Vec<FormatItem>`
+- Convertion from `strftime`-like conversion specification to `Vec<FormatItem>`
   - `%C` (century) and `%Z` (timezone name) are unsupported as no corresponding `FormatItem` exists.
+- Convertion from `strptime`-like conversion description to `Vec<FormatItem>`
+  - `%C` (century) and `%Z` (timezone name) are unsupported as no corresponding `FormatItem` exists.
+  - `%z` (timezone specifier) can't be `Z`, as we can't seem to do it with `FormatItem`.
+  - Spaces won't eat more than one spaces, as there's no repetitions in `FormatItem`.
 
 
 ## Examples
