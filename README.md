@@ -48,7 +48,7 @@ This is a library that formats/parses datetime of the [time crate](https://githu
 - Convertion from `strptime`-like conversion description to `Vec<FormatItem>`
   - `%C` (century) and `%Z` (timezone name) are unsupported as no corresponding `FormatItem` exists.
   - `%z` (timezone specifier) can't be `Z`, as we can't seem to do it with `FormatItem`.
-  - Spaces won't eat more than one spaces, as there's no repetitions in `FormatItem`.
+  - Whitespaces won't eat more than one white space, as there's no repetitions in `FormatItem`.
 
 
 ## Examples
